@@ -1,0 +1,46 @@
+version: '3.2'
+services:
+  myrabbitmq:
+    build: ./rabbitmq-service
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    hostname: myrabbitmq
+    networks:
+      - micronetwork
+
+  setup-service:
+    build: ./setup-service
+    depends_on:
+      - myrabbitmq
+    networks:
+      - micronetwork
+    environment:
+      - WAIT_HOSTS=myrabbitmq:5672
+      - RABBITMQ=myrabbitmq
+
+  processor-service:
+    build: ./processor-service
+    depends_on:
+      - setup-service
+    networks:
+      - micronetwork
+    environment:
+      - WAIT_HOSTS=myrabbitmq:5672
+      - RABBITMQ=myrabbitmq
+
+  web-service:
+    build: ./web-service
+    ports:
+      - '3000:3000'
+    depends_on:
+      - setup-service
+    networks:
+      - micronetwork
+    environment:
+      - WAIT_HOSTS=myrabbitmq:5672
+      - RABBITMQ=myrabbitmq
+
+networks:
+  micronetwork:
+    driver: 'bridge'
